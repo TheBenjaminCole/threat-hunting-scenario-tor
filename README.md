@@ -1,23 +1,23 @@
 <img width="400" src="https://github.com/user-attachments/assets/44bac428-01bb-4fe9-9d85-96cba7698bee" alt="Tor Logo with the onion and a crosshair on it"/>
 
-# Threat Hunt Report: Unauthorized TOR Usage
+# Threat Hunt Report: Detection of Unauthorized TOR Browser Installation and Usage
 - [Scenario Creation](https://github.com/TheBenjaminCole/threat-hunting-scenario-tor/blob/main/threat-hunting-scenario-tor-event-creation.md)
 
 ## Platforms and Languages Leveraged
 - Windows 11 Virtual Machines (Microsoft Azure)
-- EDR Platform: Microsoft Defender for Endpoint
+- Endpoint Detection and Response (EDR): Microsoft Defender for Endpoint
 - Kusto Query Language (KQL)
 - Tor Browser
 
 ##  Scenario
 
-Management suspects that some employees may be using TOR browsers to bypass network security controls because recent network logs show unusual encrypted traffic patterns and connections to known TOR entry nodes. Additionally, there have been anonymous reports of employees discussing ways to access restricted sites during work hours. The goal is to detect any TOR usage and analyze related security incidents to mitigate potential risks. If any use of TOR is found, notify management.
+Management raised concerns regarding potential policy violations after observing anomalous encrypted outbound traffic and receiving anonymous reports suggesting that employees may be attempting to bypass web usage restrictions. The objective of this threat hunt was to determine whether TOR Browser had been installed or used on corporate endpoints and to assess the associated security risk. Confirmed TOR usage would require notification of management and appropriate response actions.
 
 ### High-Level TOR-Related IoC Discovery Plan
 
 - **Check `DeviceFileEvents`** for any `tor(.exe)` or `firefox(.exe)` file events.
-- **Check `DeviceProcessEvents`** for any signs of installation or usage.
-- **Check `DeviceNetworkEvents`** for any signs of outgoing connections over known TOR ports.
+- **Check `DeviceProcessEvents`** for any signs of installation or execution of TOR Browser components.
+- **Check `DeviceNetworkEvents`** for any signs of outgoing connections consistent with TOR usage.
 
 ---
 
@@ -25,7 +25,7 @@ Management suspects that some employees may be using TOR browsers to bypass netw
 
 ### 1. Searched the `DeviceFileEvents` Table
 
-Searched for any file that had the string "tor" in it and discovered what looks like the user "bcole" downloaded a TOR installer, did something that resulted in many TOR-related files being copied to the desktop, and the creation of a file called `tor-shopping-list.txt` on the desktop at `2026-01-14T17:09:23.0990778Z`. These events began at `2026-01-14T16:38:30.2908254Z`.
+A search was conducted for file activity containing the string `tor`. Results indicate that the user `bcole` downloaded a TOR Browser installer and generated multiple TOR-related files on the endpoint `mde-lab-test-be`. Activity also included the creation of a user-generated text file during the same session.
 
 **Query used to locate events:**
 
@@ -62,7 +62,7 @@ DeviceProcessEvents
 
 ### 3. Searched the `DeviceProcessEvents` Table for TOR Browser Execution
 
-Searched for any indication that user "bcole" actually opened the TOR browser. There was evidence that they did open it at `2026-01-14T16:52:39.1428052Z`. There were several other instances of `firefox.exe` (TOR) as well as `tor.exe` spawned afterwards.
+Further analysis identified execution of TOR Browser components, including firefox.exe and tor.exe, confirming that the browser was launched successfully following installation.
 
 **Query used to locate events:**
 
@@ -79,7 +79,7 @@ DeviceProcessEvents
 
 ### 4. Searched the `DeviceNetworkEvents` Table for TOR Network Connections
 
-Searched for any indication the TOR browser was used to establish a connection using any of the known TOR ports. At `2026-01-14T16:53:14.7613209Z`, an employee on the "mde-lab-test-be" device successfully established a connection to the remote IP address `127.0.0.1` on port `9150`. The connection was initiated by the process `firefox.exe`, located in the folder `C:\Users\bcole\Desktop\Tor Browser\Browser\firefox.exe`. There were a couple of other connections to sites over port `443`.
+Network telemetry confirmed TOR-related communication. The TOR Browser establishes a local SOCKS proxy on 127.0.0.1:9150, which is used to route traffic through the TOR network. Connections observed on this port confirm active TOR network usage.
 
 **Query used to locate events:**
 
@@ -105,8 +105,8 @@ DeviceNetworkEvents
 
 ### 2. Process Execution - TOR Browser Installation
 
-- **Timestamp:** `2024-11-08T22:16:47.4484567Z`
-- **Event:** The user "employee" executed the file `tor-browser-windows-x86_64-portable-14.0.1.exe` in silent mode, initiating a background installation of the TOR Browser.
+- **Timestamp:** `2026-01-14T16:51:59.9022141Z`
+- **Event:** The user "employee" executed the file `tor-browser-windows-x86_64-portable-15.0.4.exe` in silent mode, initiating a background installation of the TOR Browser.
 - **Action:** Process creation detected.
 - **Command:** `tor-browser-windows-x86_64-portable-15.0.4  /S`
 - **File Path:** `C:\Users\bcole\Downloads\tor-browser-windows-x86_64-portable-15.0.4.exe`
@@ -144,7 +144,7 @@ DeviceNetworkEvents
 
 ## Summary
 
-The user "bcole" on the "mde-lab-test-be" device initiated and completed the installation of the TOR browser. They proceeded to launch the browser, establish connections within the TOR network, and created various files related to TOR on their desktop, including a file named `tor-shopping-list.txt`. This sequence of activities indicates that the user actively installed, configured, and used the TOR browser, likely for anonymous browsing purposes, with possible documentation in the form of the "shopping list" file.
+This investigation confirmed that the user `bcole` installed and executed the TOR Browser on endpoint `mde-lab-test-be`. Telemetry shows a clear progression from installer download to process execution and TOR network proxy usage. These activities represent a violation of acceptable use policy and introduce potential risks related to anonymous access, reduced monitoring visibility, and potential data exfiltration pathways.
 
 ---
 
@@ -153,3 +153,11 @@ The user "bcole" on the "mde-lab-test-be" device initiated and completed the ins
 TOR usage was confirmed on the endpoint `mde-lab-test-be` by the user `bcole`. The device was isolated, and the user's direct manager was notified.
 
 ---
+
+## Detection Limitations & Future Enhancements
+
+While this hunt successfully identified TOR usage through known ports, TOR traffic can be obfuscated through binary renaming, bridges, and custom proxy confiurations, so future detection may be enhanced by behavioral detection of local proxy chaining activity, TLS fingerprinting, etc.
+
+## Conclusion
+
+This threat hunt demonstrates the effectiveness of correlating file, process, and network telemetry to identify unauthorized anonymization tool usage within an enterprise environment. The methodology and findings provide a repeatable framework for detecting similar activity in the future.
