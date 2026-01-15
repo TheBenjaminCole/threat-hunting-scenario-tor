@@ -1,12 +1,25 @@
-# Threat Event (Unauthorized TOR Usage)
+# Threat Event Scenario: Unauthorized TOR Browser Usage
+
+## Threat Event Summary
+
 **Unauthorized TOR Browser Installation and Use**
+
+This document describes a controlled simulation of unauthorized TOR Browser installation and usage on a corporate-managed Windows endpoint. The purpose of this scenario is to generate realistic logs and indicators of compromise (IoCs) for validating threat hunting queries and detection logic within Microsoft Defender for Endpoint.
+
+This scenario supports blue team, purple team, and detection engineering workflows.
+
+---
+
+## Simultated Activity: Log and IoC Generation
+
+The following actions were performed by a simulated user to create representative endpoint and network telemetry associated with TOR Browser usage.
 
 ## Steps the "Bad Actor" took Create Logs and IoCs:
 1. Download the TOR browser installer: https://www.torproject.org/download/
 2. Install it silently: ```tor-browser-windows-x86_64-portable-15.0.4.exe /S```
 3. Opens the TOR browser from the folder on the desktop
 4. Connect to TOR and browse a few sites. For example:
-   - **WARNING: The links to onion sites change a lot and these have changed. However if you connect to Tor and browse around normal sites a bit, the necessary logs should still be created:**
+   - **Important Note: The links to onion sites change frequently. However if you connect to Tor and browse around normal sites a bit, the necessary logs should still be created:**
    - Current Dread Forum: ```dreadytofatroptsdj6io7l3xptbet6onoyno2yv7jicoxknyazubrad.onion```
    - Dark Markets Forum: ```dreadytofatroptsdj6io7l3xptbet6onoyno2yv7jicoxknyazubrad.onion/d/DarkNetMarkets```
    - Current Elysium Market: ```elysiumutkwscnmdohj23gkcyp3ebrf4iio3sngc5tvcgyfp4nqqmwad.top/login```
